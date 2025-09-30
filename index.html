@@ -4,169 +4,194 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Quiet Fires — RTA</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
     :root {
       --bg: #080608;
-      --card: #0f0b0f;
       --gold: #D4AF37;
-      font-family: 'Playfair Display', Georgia, serif;
+      --card-bg: rgba(15,11,15,0.7);
+      --particle-color: rgba(212,175,55,0.08);
     }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      background: linear-gradient(180deg, var(--bg), #050305 85%);
-      color: var(--gold);
+    html,body{
+      margin:0;
+      padding:0;
+      width:100%;
+      height:100%;
+      background: var(--bg);
+      font-family:'Playfair Display', Georgia, serif;
+      overflow:hidden;
+    }
+
+    canvas#background {
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      z-index:0;
     }
 
     .wrap {
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 48px;
       position: relative;
-      overflow: hidden;
+      width:100%;
+      height:100%;
+      display:grid;
+      place-items:center;
+      z-index:10;
     }
 
     .card {
-      width: min(900px, 94%);
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
-      border-radius: 22px;
-      padding: 36px 40px;
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 32px;
-      align-items: start;
-      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.75);
       position: relative;
-      z-index: 2;
-    }
-
-    .left h1 {
-      font-size: 42px;
-      margin: 0 0 16px 0;
-      letter-spacing: 0;
+      background: var(--card-bg);
+      padding: 40px 50px;
+      border-radius: 24px;
+      box-shadow: 0 16px 60px rgba(0,0,0,0.75);
+      max-width: 800px;
       color: var(--gold);
-      line-height: 1.2;
-    }
-
-    .left p {
-      margin: 0 0 28px 0;
-      color: var(--gold);
-      line-height: 1.8;
-      font-size: 18px;
-    }
-
-    .cta {
-      margin-top: 20px;
       text-align: left;
+      backdrop-filter: blur(4px);
+      transition: transform 0.3s ease;
     }
 
-    .btn {
+    .card h1{
+      font-size:44px;
+      margin-bottom:20px;
+      line-height:1.2;
+    }
+
+    .card p{
+      font-size:18px;
+      line-height:1.8;
+      margin-bottom:28px;
+    }
+
+    .cta button{
       background: linear-gradient(90deg, var(--gold), #ffdf80);
-      border: none;
-      padding: 14px 28px;
-      border-radius: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      box-shadow: 0 10px 28px rgba(212, 175, 55, 0.28);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      font-size: 16px;
-      color: #050305;
+      border:none;
+      padding:14px 28px;
+      border-radius:14px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:16px;
+      color:#050305;
+      box-shadow: 0 10px 28px rgba(212,175,55,0.28);
+      transition: transform 0.25s ease;
     }
 
-    .btn:hover {
-      transform: translateY(-2px) scale(1.02);
+    .cta button:hover{
+      transform: scale(1.03);
     }
 
-    .accent {
-      position: absolute;
-      pointer-events: none;
-      opacity: 0.15;
-      z-index: 1;
+    footer{
+      margin-top:28px;
+      font-size:12px;
+      color: rgba(212,175,55,0.3);
     }
 
-    .top-left { top: 0; left: 0; width: 140px; }
-    .top-right { top: 0; right: 0; width: 140px; }
-    .bottom-left { bottom: 0; left: 0; width: 160px; }
-    .bottom-right { bottom: 0; right: 0; width: 160px; }
-
-    footer {
-      margin-top: 28px;
-      color: rgba(212, 175, 55, 0.3);
-      font-size: 12px;
-      text-align: left;
+    /* Floating accents */
+    .floating {
+      position:absolute;
+      z-index:5;
+      pointer-events:none;
+      font-size:16px;
+      color: var(--gold);
+      opacity:0.1;
+      user-select:none;
+      white-space: nowrap;
     }
 
-    @media (max-width: 900px) {
-      .card { padding: 32px 28px; }
-      .accent { width: 100px; }
+    /* Smoke/flame animations using CSS */
+    .smoke, .flame{
+      position:absolute;
+      border-radius:50%;
+      opacity:0.06;
+      background: radial-gradient(circle, rgba(212,175,55,0.4) 0%, transparent 80%);
+      pointer-events:none;
+    }
+
+    @keyframes drift {
+      0%{transform: translate(0,0) scale(1);}
+      50%{transform: translate(10px,-20px) scale(1.1);}
+      100%{transform: translate(0,-40px) scale(1);}
+    }
+
+    .smoke {
+      animation: drift 12s infinite ease-in-out;
+    }
+
+    .flame {
+      animation: drift 8s infinite ease-in-out;
+      background: radial-gradient(circle, rgba(255,180,80,0.5) 0%, transparent 70%);
     }
   </style>
 </head>
 <body>
+  <canvas id="background"></canvas>
   <div class="wrap">
-
-    <!-- Smoke and flame accents -->
-    <div class="accent top-left">
-      <lottie-player
-        src="https://assets7.lottiefiles.com/packages/lf20_X1NxV2.json"
-        background="transparent"
-        speed="0.4"
-        loop
-        autoplay
-        style="width:140px;height:140px"
-      ></lottie-player>
-    </div>
-
-    <div class="accent top-right">
-      <lottie-player
-        src="https://assets7.lottiefiles.com/packages/lf20_8bVx1F.json"
-        background="transparent"
-        speed="0.5"
-        loop
-        autoplay
-        style="width:140px;height:140px"
-      ></lottie-player>
-    </div>
-
-    <div class="accent bottom-left">
-      <lottie-player
-        src="https://assets7.lottiefiles.com/packages/lf20_X1NxV2.json"
-        background="transparent"
-        speed="0.6"
-        loop
-        autoplay
-        style="width:160px;height:160px"
-      ></lottie-player>
-    </div>
-
-    <div class="accent bottom-right">
-      <lottie-player
-        src="https://assets7.lottiefiles.com/packages/lf20_8bVx1F.json"
-        background="transparent"
-        speed="0.5"
-        loop
-        autoplay
-        style="width:160px;height:160px"
-      ></lottie-player>
-    </div>
-
-    <div class="card">
-      <div class="left">
-        <h1>Read That Again</h1>
-        <p>RTA was never about noise. It was about the words that press closer in silence. The ones you do not read once but again and again. This is where they live. Not scattered. Not forgotten. But waiting. Quiet fires. Red letters. The kind of pages you do not close when the room goes dark.</p>
-
-        <div class="cta">
-          <button class="btn" onclick="location.href='https://ko-fi.com/readthatagain'">Step Inside</button>
-        </div>
-
-        <footer>Quiet Fires | Read That Again</footer>
+    <div class="card" id="card">
+      <h1>Read That Again</h1>
+      <p>RTA is not noise. It is the letters that lean closer when the room is silent. The ones that press into your awareness. Step closer. Let them see you. Let the quiet recognize you. Each line waits, praising, holding, remembering.</p>
+      <div class="cta">
+        <button onclick="location.href='https://ko-fi.com/readthatagain'">Step Inside</button>
       </div>
+      <footer>Quiet Fires | Read That Again</footer>
     </div>
-
   </div>
 
-  <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+  <script>
+    // --- Canvas background particles (sparks) ---
+    const canvas = document.getElementById('background');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let particles = [];
+    for(let i=0;i<150;i++){
+      particles.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        r: Math.random()*2+1,
+        dx: (Math.random()-0.5)*0.3,
+        dy: (Math.random()-0.5)*0.3
+      });
+    }
+
+    function animate(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      particles.forEach(p=>{
+        p.x+=p.dx; p.y+=p.dy;
+        if(p.x<0) p.x=canvas.width; if(p.x>canvas.width)p.x=0;
+        if(p.y<0) p.y=canvas.height; if(p.y>canvas.height)p.y=0;
+        ctx.fillStyle = "rgba(212,175,55,0.08)";
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fill();
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // --- Create smoke/flame divs ---
+    for(let i=0;i<8;i++){
+      let div = document.createElement('div');
+      div.className = i%2==0?'smoke':'flame';
+      div.style.width = `${Math.random()*60+40}px`;
+      div.style.height = `${Math.random()*60+40}px`;
+      div.style.left = `${Math.random()*window.innerWidth}px`;
+      div.style.top = `${Math.random()*window.innerHeight}px`;
+      document.body.appendChild(div);
+    }
+
+    // --- Parallax on mouse move ---
+    const card = document.getElementById('card');
+    document.addEventListener('mousemove',(e)=>{
+      const x = (e.clientX - window.innerWidth/2)/50;
+      const y = (e.clientY - window.innerHeight/2)/50;
+      card.style.transform = `translate(${x}px, ${y}px)`;
+    });
+  </script>
 </body>
 </html>
